@@ -1,12 +1,12 @@
 package com.srlabs.instatrend.instatrend;
-
 import android.os.AsyncTask;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
-
+import java.util.ArrayList;
 import twitter4j.Trend;
 import twitter4j.Trends;
 import twitter4j.Twitter;
@@ -19,6 +19,10 @@ import twitter4j.conf.ConfigurationBuilder;
 public class MainActivity extends ActionBarActivity {
 
     private ConfigurationBuilder builder;
+    private RecyclerView mRecyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+    private ArrayList<String> mTrendingTopics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,13 +30,17 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         GetTrends getTrends=new GetTrends();
         getTrends.execute();
+        mRecyclerView = (RecyclerView) findViewById(R.id.rvTrends);
+        mRecyclerView.setHasFixedSize(true);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
     }
 
-    public class GetTrends extends AsyncTask<Void,Void,String>
+    public class GetTrends extends AsyncTask<Void,Void,ArrayList<String>>
     {
         @Override
-        protected String doInBackground(Void... params) {
-            String temp="";
+        protected ArrayList<String> doInBackground(Void... params) {
+            ArrayList<String> trendList=new ArrayList<String>();
             builder = new ConfigurationBuilder();
             builder.setApplicationOnlyAuthEnabled(true);
             Twitter twitter = new TwitterFactory(builder.build()).getInstance();
@@ -43,19 +51,21 @@ public class MainActivity extends ActionBarActivity {
                 Trend[] trends=value.getTrends();
                 for(Trend trend:trends)
                 {
-                    temp+=trend.getName()+" ,";
-
+                    System.out.println("Value is "+trend.getName());
+                    trendList.add(trend.getName());
                 }
+
             } catch (TwitterException e) {
                 e.printStackTrace();
             }
-            return temp;
+            return trendList;
         }
 
         @Override
-        protected void onPostExecute(String result) {
-            TextView txtView=(TextView)findViewById(R.id.txtSample);
-            txtView.setText(result);
+        protected void onPostExecute(ArrayList<String> result) {
+            mTrendingTopics=result;
+            mAdapter = new TrendAdapter(mTrendingTopics);
+            mRecyclerView.setAdapter(mAdapter);
         }
     }
 
